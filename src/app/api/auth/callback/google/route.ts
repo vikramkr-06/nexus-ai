@@ -44,12 +44,15 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tokenResponse.ok) {
+      console.error(await tokenResponse.text());
       return NextResponse.redirect(
         new URL("/login?error=token_exchange_failed", request.url)
       );
     }
 
     const tokens = await tokenResponse.json();
+
+    console.log("Google Token Response:", tokens);
 
     // Get user info
     const userInfoResponse = await fetch(
@@ -66,6 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userInfo = await userInfoResponse.json();
+    console.log("Google User Info:", userInfo);
 
     const userId = await findOrCreateOAuthUser({
       provider: "google",
@@ -88,6 +92,7 @@ export async function GET(request: NextRequest) {
     const redirectUrl = callbackUrl ?? "/dashboard";
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   } catch {
+    console.error("Google OAuth Error:", error);
     return NextResponse.redirect(
       new URL("/login?error=auth_failed", request.url)
     );

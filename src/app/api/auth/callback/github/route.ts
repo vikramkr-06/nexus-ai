@@ -126,6 +126,7 @@ export async function GET(request: NextRequest) {
     const redirectUrl = callbackUrl ?? "/dashboard";
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   } catch {
+    console.error("GitHub OAuth Error:", error);
     return NextResponse.redirect(
       new URL("/login?error=auth_failed", request.url)
     );
