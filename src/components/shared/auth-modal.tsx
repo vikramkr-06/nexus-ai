@@ -39,7 +39,9 @@ export function AuthModal() {
       params.set("callbackUrl", callbackUrl);
     }
     const query = params.toString();
-    window.location.href = `/api/auth/login/${provider}${query ? `?${query}` : ""}`;
+    // DO IT
+    const BASE_URL = "https://nexus-ai-two-indol.vercel.app";
+    window.location.href = `${BASE_URL}/api/auth/login/${provider}${query ? `?${query}` : ""}`;
   };
 
   return (
