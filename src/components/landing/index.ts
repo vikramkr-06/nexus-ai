@@ -1,0 +1,9 @@
+export { HeroSection } from "./hero-section";
+export { TrustedSection } from "./trusted-section";
+export { ToolsSection } from "./tools-section";
+export { WhySection } from "./why-section";
+export { HowItWorksSection } from "./how-it-works-section";
+export { PricingSection } from "./pricing-section";
+export { TestimonialsSection } from "./testimonials-section";
+export { FaqSection } from "./faq-section";
+export { CtaSection } from "./cta-section";
