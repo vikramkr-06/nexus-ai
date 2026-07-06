@@ -30,18 +30,23 @@ export async function GET(request: NextRequest) {
   cookieStore.delete("oauth_callback");
 
   try {
-    // Exchange code for tokens
-    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: AUTH_CONFIG.google.clientId,
-        client_secret: AUTH_CONFIG.google.clientSecret,
-        redirect_uri: AUTH_CONFIG.google.redirectUri,
-        grant_type: "authorization_code",
-      }),
-    });
+    // Exchange code for access token
+    const tokenResponse = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          client_id: AUTH_CONFIG.github.clientId,
+          client_secret: AUTH_CONFIG.github.clientSecret,
+          code,
+          redirect_uri: AUTH_CONFIG.github.redirectUri,
+        }),
+      }
+    );
 
     if (!tokenResponse.ok) {
       return NextResponse.redirect(
@@ -51,30 +56,63 @@ export async function GET(request: NextRequest) {
 
     const tokens = await tokenResponse.json();
 
-    // Get user info
-    const userInfoResponse = await fetch(
-      "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: { Authorization: `Bearer ${tokens.access_token}` },
-      }
-    );
+    if (tokens.error) {
+      return NextResponse.redirect(
+        new URL(`/login?error=${tokens.error}`, request.url)
+      );
+    }
 
-    if (!userInfoResponse.ok) {
+    // Get user info
+    const userResponse = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${tokens.access_token}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    });
+
+    if (!userResponse.ok) {
       return NextResponse.redirect(
         new URL("/login?error=user_info_failed", request.url)
       );
     }
 
-    const userInfo = await userInfoResponse.json();
+    const userInfo = await userResponse.json();
+
+    // Get user email (may be private)
+    let email = userInfo.email;
+    if (!email) {
+      const emailsResponse = await fetch(
+        "https://api.github.com/user/emails",
+        {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            Accept: "application/vnd.github.v3+json",
+          },
+        }
+      );
+      if (emailsResponse.ok) {
+        const emails = await emailsResponse.json();
+        const primaryEmail = emails.find(
+          (e: { primary: boolean; verified: boolean }) =>
+            e.primary && e.verified
+        );
+        email = primaryEmail?.email ?? emails[0]?.email;
+      }
+    }
+
+    if (!email) {
+      return NextResponse.redirect(
+        new URL("/login?error=no_email", request.url)
+      );
+    }
 
     const userId = await findOrCreateOAuthUser({
-      provider: "google",
-      providerAccountId: userInfo.id,
-      email: userInfo.email,
-      name: userInfo.name ?? null,
-      avatarUrl: userInfo.picture ?? null,
+      provider: "github",
+      providerAccountId: String(userInfo.id),
+      email,
+      name: userInfo.name ?? userInfo.login ?? null,
+      avatarUrl: userInfo.avatar_url ?? null,
       accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
     });
 
     const ip =

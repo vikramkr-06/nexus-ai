@@ -9,6 +9,12 @@ import {
   BarChart3,
   Sparkles,
   Wrench,
+  History,
+  BookmarkCheck,
+  Star,
+  MessageCircle,
+  Bell,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@/types";
@@ -28,7 +34,7 @@ export interface NavGroup {
 
 export const dashboardNavigation: NavGroup[] = [
   {
-    title: "Overview",
+    title: "Menu",
     items: [
       {
         title: "Dashboard",
@@ -39,12 +45,26 @@ export const dashboardNavigation: NavGroup[] = [
         title: "AI Tools",
         href: "/dashboard/tools",
         icon: Sparkles,
-        badge: "Soon",
+      },
+    ],
+  },
+  {
+    title: "Activity",
+    items: [
+      {
+        title: "My History",
+        href: "/dashboard/history",
+        icon: History,
       },
       {
-        title: "Usage",
-        href: "/dashboard/usage",
-        icon: BarChart3,
+        title: "Saved Results",
+        href: "/dashboard/saved",
+        icon: BookmarkCheck,
+      },
+      {
+        title: "Favorite Tools",
+        href: "/dashboard/favorites",
+        icon: Star,
       },
     ],
   },
@@ -57,14 +77,19 @@ export const dashboardNavigation: NavGroup[] = [
         icon: User,
       },
       {
+        title: "Subscription",
+        href: "/dashboard/subscription",
+        icon: CreditCard,
+      },
+      {
+        title: "Support",
+        href: "/dashboard/support",
+        icon: MessageCircle,
+      },
+      {
         title: "Settings",
         href: "/dashboard/settings",
         icon: Settings,
-      },
-      {
-        title: "Billing",
-        href: "/dashboard/billing",
-        icon: CreditCard,
       },
     ],
   },

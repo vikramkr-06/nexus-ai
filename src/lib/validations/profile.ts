@@ -22,6 +22,37 @@ export const profileSchema = z.object({
     .max(500, "Bio must be less than 500 characters")
     .optional()
     .or(z.literal("")),
+  occupation: z
+    .string()
+    .max(255, "Occupation must be less than 255 characters")
+    .optional()
+    .or(z.literal("")),
+  company: z
+    .string()
+    .max(255, "Company must be less than 255 characters")
+    .optional()
+    .or(z.literal("")),
+  website: z
+    .string()
+    .url("Must be a valid URL")
+    .max(500)
+    .optional()
+    .or(z.literal("")),
+  twitter: z
+    .string()
+    .max(255)
+    .optional()
+    .or(z.literal("")),
+  linkedin: z
+    .string()
+    .max(255)
+    .optional()
+    .or(z.literal("")),
+  github: z
+    .string()
+    .max(255)
+    .optional()
+    .or(z.literal("")),
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -31,6 +62,7 @@ export const userSettingsSchema = z.object({
   emailNotifications: z.boolean(),
   pushNotifications: z.boolean(),
   weeklyDigest: z.boolean(),
+  marketingEmails: z.boolean(),
 });
 
 export type UserSettingsFormValues = z.infer<typeof userSettingsSchema>;

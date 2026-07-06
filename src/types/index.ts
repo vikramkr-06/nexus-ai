@@ -8,6 +8,16 @@ export type SubscriptionStatus =
   | "paused";
 export type AuthProvider = "google" | "github";
 export type Theme = "light" | "dark" | "system";
+export type ToolCategory =
+  | "resume"
+  | "content"
+  | "translation"
+  | "assignment"
+  | "interview"
+  | "business"
+  | "travel"
+  | "legal"
+  | "tax";
 
 export interface User {
   id: string;
@@ -28,6 +38,12 @@ export interface Profile {
   language: string | null;
   timezone: string | null;
   bio: string | null;
+  occupation: string | null;
+  company: string | null;
+  website: string | null;
+  twitter: string | null;
+  linkedin: string | null;
+  github: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,4 +100,41 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface HistoryItem {
+  id: string;
+  toolId: string;
+  toolName: string;
+  category: ToolCategory;
+  title: string;
+  preview: string;
+  createdAt: string;
+  isFavorite: boolean;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  read: boolean;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  content: string;
+  sender: "user" | "support";
+  createdAt: string;
+  read: boolean;
+}
+
+export interface UsageStats {
+  toolsUsed: number;
+  toolsLimit: number;
+  creditsUsed: number;
+  creditsLimit: number;
+  savedResults: number;
+  period: string;
 }

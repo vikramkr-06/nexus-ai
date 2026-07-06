@@ -31,6 +31,18 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
 
 export const authProviderEnum = pgEnum("auth_provider", ["google", "github"]);
 
+export const toolCategoryEnum = pgEnum("tool_category", [
+  "resume",
+  "content",
+  "translation",
+  "assignment",
+  "interview",
+  "business",
+  "travel",
+  "legal",
+  "tax",
+]);
+
 /* ── Users ─────────────────────────────────────────── */
 
 export const users = pgTable("users", {
@@ -61,6 +73,12 @@ export const profiles = pgTable("profiles", {
   language: varchar("language", { length: 10 }).default("en"),
   timezone: varchar("timezone", { length: 100 }).default("UTC"),
   bio: text("bio"),
+  occupation: varchar("occupation", { length: 255 }),
+  company: varchar("company", { length: 255 }),
+  website: varchar("website", { length: 500 }),
+  twitter: varchar("twitter", { length: 255 }),
+  linkedin: varchar("linkedin", { length: 255 }),
+  github: varchar("github", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -142,11 +160,105 @@ export const userSettings = pgTable("user_settings", {
   emailNotifications: boolean("email_notifications").notNull().default(true),
   pushNotifications: boolean("push_notifications").notNull().default(false),
   weeklyDigest: boolean("weekly_digest").notNull().default(true),
+  marketingEmails: boolean("marketing_emails").notNull().default(false),
   preferences: jsonb("preferences"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/* ── Tool History ──────────────────────────────────── */
+
+export const toolHistory = pgTable("tool_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  toolId: varchar("tool_id", { length: 100 }).notNull(),
+  toolName: varchar("tool_name", { length: 255 }).notNull(),
+  category: toolCategoryEnum("category").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  preview: text("preview"),
+  inputData: jsonb("input_data"),
+  outputData: jsonb("output_data"),
+  isFavorite: boolean("is_favorite").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/* ── Saved Results ─────────────────────────────────── */
+
+export const savedResults = pgTable("saved_results", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  historyId: uuid("history_id").references(() => toolHistory.id, {
+    onDelete: "set null",
+  }),
+  toolId: varchar("tool_id", { length: 100 }).notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  content: text("content").notNull(),
+  format: varchar("format", { length: 20 }).default("text"),
+  isFavorite: boolean("is_favorite").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/* ── Notifications ─────────────────────────────────── */
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 20 }).notNull().default("info"),
+  read: boolean("read").notNull().default(false),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/* ── Support Chats ─────────────────────────────────── */
+
+export const supportChats = pgTable("support_chats", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: varchar("status", { length: 20 }).notNull().default("open"),
+  subject: varchar("subject", { length: 500 }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  chatId: uuid("chat_id")
+    .notNull()
+    .references(() => supportChats.id, { onDelete: "cascade" }),
+  senderId: uuid("sender_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  senderType: varchar("sender_type", { length: 20 }).notNull(), // 'user' or 'support'
+  content: text("content").notNull(),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
@@ -167,7 +279,7 @@ export const appSettings = pgTable("app_settings", {
     .defaultNow(),
 });
 
-/* ── Audit Log (for future extensibility) ──────────── */
+/* ── Audit Log ─────────────────────────────────────── */
 
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -182,7 +294,7 @@ export const auditLogs = pgTable("audit_logs", {
     .defaultNow(),
 });
 
-/* ── Usage Tracking (for AI tool metering) ─────────── */
+/* ── Usage Tracking ────────────────────────────────── */
 
 export const usageRecords = pgTable("usage_records", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -193,6 +305,19 @@ export const usageRecords = pgTable("usage_records", {
   tokensUsed: integer("tokens_used").default(0),
   creditsUsed: integer("credits_used").default(0),
   metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/* ── Favorite Tools ────────────────────────────────── */
+
+export const favoriteTools = pgTable("favorite_tools", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  toolId: varchar("tool_id", { length: 100 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

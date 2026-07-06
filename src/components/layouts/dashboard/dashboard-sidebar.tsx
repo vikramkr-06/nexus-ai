@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useSidebarStore } from "@/store/use-sidebar-store";
+import { useUserStore } from "@/store/use-user-store";
 import { dashboardNavigation, type NavGroup } from "@/lib/navigation";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, LogOut, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface DashboardSidebarProps {
   navGroups?: NavGroup[];
@@ -20,7 +21,22 @@ export function DashboardSidebar({
   navGroups = dashboardNavigation,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { isOpen, isCollapsed, close, toggleCollapse } = useSidebarStore();
+  const user = useUserStore((s) => s.user);
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (res.ok) {
+        toast.success("Logged out successfully");
+        router.push("/");
+        router.refresh();
+      }
+    } catch {
+      toast.error("Failed to log out");
+    }
+  };
 
   return (
     <>
@@ -37,9 +53,7 @@ export function DashboardSidebar({
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-sidebar transition-all duration-300 ease-in-out",
           isCollapsed ? "w-[68px]" : "w-64",
-          isOpen
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         {/* Logo */}
@@ -62,7 +76,10 @@ export function DashboardSidebar({
 
         {/* Navigation */}
         <ScrollArea className="flex-1 py-4">
-          <nav className="flex flex-col gap-6 px-3" aria-label="Dashboard navigation">
+          <nav
+            className="flex flex-col gap-6 px-3"
+            aria-label="Dashboard navigation"
+          >
             {navGroups.map((group) => (
               <div key={group.title}>
                 {!isCollapsed && (
@@ -74,7 +91,9 @@ export function DashboardSidebar({
                   {group.items.map((item) => {
                     const isActive =
                       pathname === item.href ||
-                      (item.href !== "/dashboard" && item.href !== "/admin" && pathname.startsWith(item.href));
+                      (item.href !== "/dashboard" &&
+                        item.href !== "/admin" &&
+                        pathname.startsWith(item.href));
 
                     return (
                       <Link
@@ -82,7 +101,7 @@ export function DashboardSidebar({
                         href={item.href}
                         onClick={close}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
                           "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           isActive
@@ -118,19 +137,39 @@ export function DashboardSidebar({
                 </div>
               </div>
             ))}
+
+            {/* Logout */}
+            <div className="border-t pt-4">
+              <button
+                onClick={handleLogout}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                  "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  isCollapsed && "justify-center px-2"
+                )}
+                title={isCollapsed ? "Logout" : undefined}
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <span>Logout</span>}
+              </button>
+            </div>
           </nav>
         </ScrollArea>
 
-        {/* Bottom */}
-        {!isCollapsed && (
+        {/* Upgrade card */}
+        {!isCollapsed && user?.plan === "free" && (
           <div className="border-t p-4">
-            <div className="rounded-xl bg-primary/5 p-3 text-center">
-              <p className="text-xs font-medium text-primary">
-                Upgrade to Pro
+            <div className="rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold">Upgrade to Pro</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-3">
+                Unlock unlimited AI tools and premium features.
               </p>
-              <p className="mt-0.5 text-[10px] text-muted-foreground">
-                Unlock all AI tools
-              </p>
+              <Button size="sm" className="w-full" asChild>
+                <Link href="/dashboard/subscription">Upgrade Now</Link>
+              </Button>
             </div>
           </div>
         )}

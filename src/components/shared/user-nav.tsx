@@ -12,7 +12,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { getInitials } from "@/lib/utils";
-import { LogOut, Settings, User, Shield } from "lucide-react";
+import {
+  LogOut,
+  Settings,
+  User,
+  Shield,
+  LayoutDashboard,
+  CreditCard,
+  Crown,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -22,6 +30,8 @@ export function UserNav() {
   const router = useRouter();
 
   if (!user) return null;
+
+  const isPremium = user.plan !== "free";
 
   const handleLogout = async () => {
     try {
@@ -48,7 +58,9 @@ export function UserNav() {
               <AvatarImage src={user.avatarUrl} alt={user.fullName ?? ""} />
             )}
             <AvatarFallback className="text-xs">
-              {user.fullName ? getInitials(user.fullName) : user.email[0].toUpperCase()}
+              {user.fullName
+                ? getInitials(user.fullName)
+                : user.email[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </button>
@@ -62,16 +74,40 @@ export function UserNav() {
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
-            <Badge variant="secondary" className="w-fit mt-1 text-[10px]">
-              {user.plan.toUpperCase()}
-            </Badge>
+            <div className="flex items-center gap-1 mt-2">
+              <Badge
+                variant={isPremium ? "default" : "secondary"}
+                className="text-[10px]"
+              >
+                {isPremium ? (
+                  <>
+                    <Crown className="h-3 w-3 mr-0.5" />
+                    {user.plan.toUpperCase()}
+                  </>
+                ) : (
+                  "FREE PLAN"
+                )}
+              </Badge>
+            </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link href="/dashboard" className="cursor-pointer">
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            Dashboard
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link href="/dashboard/profile" className="cursor-pointer">
             <User className="mr-2 h-4 w-4" />
             Profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/subscription" className="cursor-pointer">
+            <CreditCard className="mr-2 h-4 w-4" />
+            Subscription
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -81,12 +117,15 @@ export function UserNav() {
           </Link>
         </DropdownMenuItem>
         {user.role === "admin" && (
-          <DropdownMenuItem asChild>
-            <Link href="/admin" className="cursor-pointer">
-              <Shield className="mr-2 h-4 w-4" />
-              Admin Panel
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin" className="cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                Admin Panel
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
